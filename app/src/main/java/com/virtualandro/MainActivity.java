@@ -5,15 +5,9 @@ import android.os.*;
 import android.widget.*;
 import android.view.*;
 import android.util.*;
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 public class MainActivity extends Activity {
     
-    // Changed from /sdcard/VirtualAndro to local app storage
-    private static final String VM_BASE = "VirtualAndro";
-    private String vmDirectoryPath;
     private LinearLayout mainLayout;
     
     private String[] vmTemplates = {
@@ -22,21 +16,10 @@ public class MainActivity extends Activity {
         "Android 13 - Performance (4GB RAM)"
     };
     
-    private String[] templateConfigs = {
-        "ANDROID_VERSION=11\nALLOCATED_RAM=2048\nCPU_CORES=4\nSTORAGE=8192",
-        "ANDROID_VERSION=12\nALLOCATED_RAM=3072\nCPU_CORES=6\nSTORAGE=12288", 
-        "ANDROID_VERSION=13\nALLOCATED_RAM=4096\nCPU_CORES=8\nSTORAGE=16384"
-    };
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Initialize VM directory path in local app storage
-        vmDirectoryPath = getFilesDir().getAbsolutePath() + File.separator + VM_BASE;
-        
         setupUI();
-        createVMDirectory();
     }
     
     private void setupUI() {
@@ -53,9 +36,6 @@ public class MainActivity extends Activity {
         
         // Hardware Info Section
         addHardwareInfo();
-        
-        // Storage Info
-        addStorageInfo();
         
         setContentView(mainLayout);
     }
@@ -103,7 +83,6 @@ public class MainActivity extends Activity {
         btn.setTextColor(0xFFFFFFFF);
         btn.setPadding(40, 30, 40, 30);
         
-        // Make buttons full width
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -112,7 +91,7 @@ public class MainActivity extends Activity {
         
         btn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                createVM(index + 11, templateConfigs[index]);
+                createVM(index + 11);
             }
         });
         
@@ -140,20 +119,6 @@ public class MainActivity extends Activity {
         hardwareInfo.setPadding(30, 20, 30, 20);
         
         mainLayout.addView(hardwareInfo);
-        addSpace(20);
-    }
-    
-    private void addStorageInfo() {
-        TextView storageInfo = new TextView(this);
-        storageInfo.setText("📁 VM Storage: App Internal Storage\n" +
-                          "📍 Path: " + vmDirectoryPath);
-        storageInfo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        storageInfo.setTextColor(0xFF7F8C8D);
-        storageInfo.setGravity(Gravity.CENTER);
-        storageInfo.setPadding(20, 10, 20, 10);
-        storageInfo.setBackgroundColor(0xFFF8F9FA);
-        
-        mainLayout.addView(storageInfo);
     }
     
     private void addSpace(int height) {
@@ -163,91 +128,18 @@ public class MainActivity extends Activity {
         mainLayout.addView(space);
     }
     
-    private void createVMDirectory() {
-        File vmDir = new File(vmDirectoryPath);
-        if (!vmDir.exists()) {
-            boolean created = vmDir.mkdirs();
-            if (created) {
-                Log.d("VirtualAndro", "VM directory created: " + vmDirectoryPath);
-            } else {
-                Log.e("VirtualAndro", "Failed to create VM directory: " + vmDirectoryPath);
-            }
-        }
-    }
-    
-    private void createVM(int androidVersion, String config) {
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String vmName = "android_" + androidVersion + "_" + timestamp;
-        File vmDir = new File(vmDirectoryPath, vmName);
-        
-        if (vmDir.mkdirs()) {
-            try {
-                // Create detailed VM configuration
-                File configFile = new File(vmDir, "vm_config.conf");
-                FileWriter writer = new FileWriter(configFile);
-                writer.write("# VirtualAndro VM Configuration\n");
-                writer.write("VM_NAME=" + vmName + "\n");
-                writer.write(config + "\n");
-                writer.write("KIRIN_970_OPTIMIZED=true\n");
-                writer.write("BIG_LITTLE_CONFIG=4xA53_cores_for_VM\n");
-                writer.write("GPU_SHARING=Mali-G72_MP12_virtualized\n");
-                writer.write("STORAGE_OPTIMIZED=UFS_2.1_compression\n");
-                writer.write("STORAGE_PATH=" + vmDir.getAbsolutePath() + "\n");
-                writer.write("CREATED=" + new Date() + "\n");
-                writer.close();
-                
-                // Create startup script
-                File startupScript = new File(vmDir, "start_vm.sh");
-                FileWriter scriptWriter = new FileWriter(startupScript);
-                scriptWriter.write("#!/system/bin/sh\n");
-                scriptWriter.write("echo 'Starting Android " + androidVersion + " VM on Kirin 970'\n");
-                scriptWriter.write("echo 'VM Location: " + vmDir.getAbsolutePath() + "'\n");
-                scriptWriter.write("echo 'Allocated RAM: '$(grep ALLOCATED_RAM vm_config.conf | cut -d'=' -f2)'MB'\n");
-                scriptWriter.write("echo 'CPU Cores: '$(grep CPU_CORES vm_config.conf | cut -d'=' -f2)\n");
-                scriptWriter.close();
-                
-                // List created VMs
-                listCreatedVMs();
-                
-                showSuccessMessage("✅ Created: " + vmName + "\nLocation: " + vmDir.getAbsolutePath());
-                
-            } catch (IOException e) {
-                showErrorMessage("❌ Failed to create VM configuration: " + e.getMessage());
-                Log.e("VirtualAndro", "VM creation error", e);
-            }
-        } else {
-            showErrorMessage("❌ Failed to create VM directory: " + vmDir.getAbsolutePath());
-        }
-    }
-    
-    private void listCreatedVMs() {
-        File vmBaseDir = new File(vmDirectoryPath);
-        File[] vmDirs = vmBaseDir.listFiles();
-        
-        if (vmDirs != null && vmDirs.length > 0) {
-            Log.d("VirtualAndro", "Found " + vmDirs.length + " VMs:");
-            for (File vmDir : vmDirs) {
-                if (vmDir.isDirectory()) {
-                    Log.d("VirtualAndro", " - " + vmDir.getName());
-                }
-            }
-        } else {
-            Log.d("VirtualAndro", "No VMs found in " + vmDirectoryPath);
-        }
+    private void createVM(int androidVersion) {
+        String vmName = "Android " + androidVersion + " VM";
+        showSuccessMessage("✅ Created: " + vmName + "\n(VM functionality coming soon)");
     }
     
     private void showSuccessMessage(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         
-        // Also show in a dialog for important info
         new AlertDialog.Builder(this)
             .setTitle("VM Created Successfully")
             .setMessage(message)
             .setPositiveButton("OK", null)
             .show();
-    }
-    
-    private void showErrorMessage(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }
