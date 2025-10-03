@@ -11,7 +11,9 @@ import java.util.*;
 
 public class MainActivity extends Activity {
     
-    private static final String VM_BASE = "/sdcard/VirtualAndro";
+    // Changed from /sdcard/VirtualAndro to local app storage
+    private static final String VM_BASE = "VirtualAndro";
+    private String vmDirectoryPath;
     private LinearLayout mainLayout;
     
     private String[] vmTemplates = {
@@ -29,6 +31,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Initialize VM directory path in local app storage
+        vmDirectoryPath = getFilesDir().getAbsolutePath() + File.separator + VM_BASE;
+        
         setupUI();
         createVMDirectory();
     }
@@ -47,6 +53,9 @@ public class MainActivity extends Activity {
         
         // Hardware Info Section
         addHardwareInfo();
+        
+        // Storage Info
+        addStorageInfo();
         
         setContentView(mainLayout);
     }
@@ -131,6 +140,20 @@ public class MainActivity extends Activity {
         hardwareInfo.setPadding(30, 20, 30, 20);
         
         mainLayout.addView(hardwareInfo);
+        addSpace(20);
+    }
+    
+    private void addStorageInfo() {
+        TextView storageInfo = new TextView(this);
+        storageInfo.setText("📁 VM Storage: App Internal Storage\n" +
+                          "📍 Path: " + vmDirectoryPath);
+        storageInfo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        storageInfo.setTextColor(0xFF7F8C8D);
+        storageInfo.setGravity(Gravity.CENTER);
+        storageInfo.setPadding(20, 10, 20, 10);
+        storageInfo.setBackgroundColor(0xFFF8F9FA);
+        
+        mainLayout.addView(storageInfo);
     }
     
     private void addSpace(int height) {
@@ -141,16 +164,21 @@ public class MainActivity extends Activity {
     }
     
     private void createVMDirectory() {
-        File vmDir = new File(VM_BASE);
+        File vmDir = new File(vmDirectoryPath);
         if (!vmDir.exists()) {
-            vmDir.mkdirs();
+            boolean created = vmDir.mkdirs();
+            if (created) {
+                Log.d("VirtualAndro", "VM directory created: " + vmDirectoryPath);
+            } else {
+                Log.e("VirtualAndro", "Failed to create VM directory: " + vmDirectoryPath);
+            }
         }
     }
     
     private void createVM(int androidVersion, String config) {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String vmName = "android_" + androidVersion + "_" + timestamp;
-        File vmDir = new File(VM_BASE, vmName);
+        File vmDir = new File(vmDirectoryPath, vmName);
         
         if (vmDir.mkdirs()) {
             try {
@@ -164,6 +192,7 @@ public class MainActivity extends Activity {
                 writer.write("BIG_LITTLE_CONFIG=4xA53_cores_for_VM\n");
                 writer.write("GPU_SHARING=Mali-G72_MP12_virtualized\n");
                 writer.write("STORAGE_OPTIMIZED=UFS_2.1_compression\n");
+                writer.write("STORAGE_PATH=" + vmDir.getAbsolutePath() + "\n");
                 writer.write("CREATED=" + new Date() + "\n");
                 writer.close();
                 
@@ -172,17 +201,38 @@ public class MainActivity extends Activity {
                 FileWriter scriptWriter = new FileWriter(startupScript);
                 scriptWriter.write("#!/system/bin/sh\n");
                 scriptWriter.write("echo 'Starting Android " + androidVersion + " VM on Kirin 970'\n");
+                scriptWriter.write("echo 'VM Location: " + vmDir.getAbsolutePath() + "'\n");
                 scriptWriter.write("echo 'Allocated RAM: '$(grep ALLOCATED_RAM vm_config.conf | cut -d'=' -f2)'MB'\n");
                 scriptWriter.write("echo 'CPU Cores: '$(grep CPU_CORES vm_config.conf | cut -d'=' -f2)\n");
                 scriptWriter.close();
                 
+                // List created VMs
+                listCreatedVMs();
+                
                 showSuccessMessage("✅ Created: " + vmName + "\nLocation: " + vmDir.getAbsolutePath());
                 
             } catch (IOException e) {
-                showErrorMessage("❌ Failed to create VM configuration");
+                showErrorMessage("❌ Failed to create VM configuration: " + e.getMessage());
+                Log.e("VirtualAndro", "VM creation error", e);
             }
         } else {
-            showErrorMessage("❌ Failed to create VM directory");
+            showErrorMessage("❌ Failed to create VM directory: " + vmDir.getAbsolutePath());
+        }
+    }
+    
+    private void listCreatedVMs() {
+        File vmBaseDir = new File(vmDirectoryPath);
+        File[] vmDirs = vmBaseDir.listFiles();
+        
+        if (vmDirs != null && vmDirs.length > 0) {
+            Log.d("VirtualAndro", "Found " + vmDirs.length + " VMs:");
+            for (File vmDir : vmDirs) {
+                if (vmDir.isDirectory()) {
+                    Log.d("VirtualAndro", " - " + vmDir.getName());
+                }
+            }
+        } else {
+            Log.d("VirtualAndro", "No VMs found in " + vmDirectoryPath);
         }
     }
     
