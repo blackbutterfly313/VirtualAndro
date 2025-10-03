@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">VirtualAndro</string>
-    <string name="create_vm">Create Virtual Machine</string>
-    <string name="vm_created">VM Created Successfully</string>
-    <string name="huawei_nova4_info">Huawei Nova 4 - Kirin 970 Optimized</string>
 </resources>
