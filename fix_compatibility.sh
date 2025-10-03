@@ -1,3 +1,39 @@
+#!/bin/bash
+echo "🔧 FIXING ANDROID COMPATIBILITY ISSUES"
+
+# 1. Update AndroidManifest.xml for modern Android
+cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.virtualandro">
+
+    <uses-sdk
+        android:minSdkVersion="21"
+        android:targetSdkVersion="28" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:label="VirtualAndro"
+        android:theme="@android:style/Theme.Light"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="VirtualAndro"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+MANIFEST
+
+# 2. Update MainActivity to handle modern Android properly
+cat > app/src/main/java/com/virtualandro/MainActivity.java << 'JAVA'
 package com.virtualandro;
 
 import android.app.*;
@@ -168,3 +204,10 @@ public class MainActivity extends Activity {
             .show();
     }
 }
+JAVA
+
+echo "✅ Compatibility fixes applied:"
+echo "   - Updated target SDK to 28 (Android 9)"
+echo "   - Added proper density-independent pixel scaling"
+echo "   - Simplified UI for better compatibility"
+echo "   - Removed potential crash sources"
