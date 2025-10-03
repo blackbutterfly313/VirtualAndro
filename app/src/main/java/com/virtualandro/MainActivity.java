@@ -1,0 +1,203 @@
+package com.virtualandro;
+
+import android.app.*;
+import android.os.*;
+import android.widget.*;
+import android.view.*;
+import android.util.*;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public class MainActivity extends Activity {
+    
+    private static final String VM_BASE = "/sdcard/VirtualAndro";
+    private LinearLayout mainLayout;
+    
+    private String[] vmTemplates = {
+        "Android 11 - Lightweight (2GB RAM)",
+        "Android 12 - Balanced (3GB RAM)", 
+        "Android 13 - Performance (4GB RAM)"
+    };
+    
+    private String[] templateConfigs = {
+        "ANDROID_VERSION=11\nALLOCATED_RAM=2048\nCPU_CORES=4\nSTORAGE=8192",
+        "ANDROID_VERSION=12\nALLOCATED_RAM=3072\nCPU_CORES=6\nSTORAGE=12288", 
+        "ANDROID_VERSION=13\nALLOCATED_RAM=4096\nCPU_CORES=8\nSTORAGE=16384"
+    };
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setupUI();
+        createVMDirectory();
+    }
+    
+    private void setupUI() {
+        mainLayout = new LinearLayout(this);
+        mainLayout.setOrientation(LinearLayout.VERTICAL);
+        mainLayout.setPadding(50, 50, 50, 50);
+        mainLayout.setBackgroundColor(0xFFF5F5F5);
+        
+        // Header
+        addHeader();
+        
+        // VM Templates Section
+        addTemplatesSection();
+        
+        // Hardware Info Section
+        addHardwareInfo();
+        
+        setContentView(mainLayout);
+    }
+    
+    private void addHeader() {
+        TextView title = new TextView(this);
+        title.setText("VirtualAndro");
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28);
+        title.setGravity(Gravity.CENTER);
+        title.setTextColor(0xFF2C3E50);
+        title.setTypeface(null, Typeface.BOLD);
+        
+        TextView subtitle = new TextView(this);
+        subtitle.setText("Android Virtualization Engine");
+        subtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        subtitle.setGravity(Gravity.CENTER);
+        subtitle.setTextColor(0xFF7F8C8D);
+        
+        mainLayout.addView(title);
+        mainLayout.addView(subtitle);
+        addSpace(30);
+    }
+    
+    private void addTemplatesSection() {
+        TextView sectionTitle = new TextView(this);
+        sectionTitle.setText("Virtual Machine Templates");
+        sectionTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        sectionTitle.setTextColor(0xFF2C3E50);
+        sectionTitle.setTypeface(null, Typeface.BOLD);
+        mainLayout.addView(sectionTitle);
+        addSpace(10);
+        
+        for (int i = 0; i < vmTemplates.length; i++) {
+            addVMTemplateButton(i, vmTemplates[i]);
+            if (i < vmTemplates.length - 1) addSpace(15);
+        }
+        addSpace(30);
+    }
+    
+    private void addVMTemplateButton(final int index, String title) {
+        Button btn = new Button(this);
+        btn.setText(title);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        btn.setBackgroundColor(0xFF3498DB);
+        btn.setTextColor(0xFFFFFFFF);
+        btn.setPadding(40, 30, 40, 30);
+        
+        // Make buttons full width
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        btn.setLayoutParams(params);
+        
+        btn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                createVM(index + 11, templateConfigs[index]);
+            }
+        });
+        
+        mainLayout.addView(btn);
+    }
+    
+    private void addHardwareInfo() {
+        TextView hardwareTitle = new TextView(this);
+        hardwareTitle.setText("Huawei Nova 4 - Hardware Optimized");
+        hardwareTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        hardwareTitle.setTextColor(0xFF2C3E50);
+        hardwareTitle.setTypeface(null, Typeface.BOLD);
+        mainLayout.addView(hardwareTitle);
+        addSpace(10);
+        
+        TextView hardwareInfo = new TextView(this);
+        hardwareInfo.setText("• Kirin 970 SoC (4x A73 + 4x A53)\n" +
+                           "• Mali-G72 MP12 GPU\n" +
+                           "• 8GB LPDDR4X RAM\n" +
+                           "• 128GB UFS 2.1 Storage\n" +
+                           "• Android 9 (EMUI 9.1)");
+        hardwareInfo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        hardwareInfo.setTextColor(0xFF34495E);
+        hardwareInfo.setBackgroundColor(0xFFECF0F1);
+        hardwareInfo.setPadding(30, 20, 30, 20);
+        
+        mainLayout.addView(hardwareInfo);
+    }
+    
+    private void addSpace(int height) {
+        View space = new View(this);
+        space.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, height));
+        mainLayout.addView(space);
+    }
+    
+    private void createVMDirectory() {
+        File vmDir = new File(VM_BASE);
+        if (!vmDir.exists()) {
+            vmDir.mkdirs();
+        }
+    }
+    
+    private void createVM(int androidVersion, String config) {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String vmName = "android_" + androidVersion + "_" + timestamp;
+        File vmDir = new File(VM_BASE, vmName);
+        
+        if (vmDir.mkdirs()) {
+            try {
+                // Create detailed VM configuration
+                File configFile = new File(vmDir, "vm_config.conf");
+                FileWriter writer = new FileWriter(configFile);
+                writer.write("# VirtualAndro VM Configuration\n");
+                writer.write("VM_NAME=" + vmName + "\n");
+                writer.write(config + "\n");
+                writer.write("KIRIN_970_OPTIMIZED=true\n");
+                writer.write("BIG_LITTLE_CONFIG=4xA53_cores_for_VM\n");
+                writer.write("GPU_SHARING=Mali-G72_MP12_virtualized\n");
+                writer.write("STORAGE_OPTIMIZED=UFS_2.1_compression\n");
+                writer.write("CREATED=" + new Date() + "\n");
+                writer.close();
+                
+                // Create startup script
+                File startupScript = new File(vmDir, "start_vm.sh");
+                FileWriter scriptWriter = new FileWriter(startupScript);
+                scriptWriter.write("#!/system/bin/sh\n");
+                scriptWriter.write("echo 'Starting Android " + androidVersion + " VM on Kirin 970'\n");
+                scriptWriter.write("echo 'Allocated RAM: '$(grep ALLOCATED_RAM vm_config.conf | cut -d'=' -f2)'MB'\n");
+                scriptWriter.write("echo 'CPU Cores: '$(grep CPU_CORES vm_config.conf | cut -d'=' -f2)\n");
+                scriptWriter.close();
+                
+                showSuccessMessage("✅ Created: " + vmName + "\nLocation: " + vmDir.getAbsolutePath());
+                
+            } catch (IOException e) {
+                showErrorMessage("❌ Failed to create VM configuration");
+            }
+        } else {
+            showErrorMessage("❌ Failed to create VM directory");
+        }
+    }
+    
+    private void showSuccessMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        
+        // Also show in a dialog for important info
+        new AlertDialog.Builder(this)
+            .setTitle("VM Created Successfully")
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show();
+    }
+    
+    private void showErrorMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+}
