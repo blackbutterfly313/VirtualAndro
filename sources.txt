@@ -1,0 +1,5 @@
+src/main/java/com/virtualandro/core/VirtualAndro.java
+src/main/java/com/virtualandro/core/VMManager.java
+src/main/java/com/virtualandro/core/MenuSystem.java
+src/main/java/com/virtualandro/core/SimpleTest.java
+src/main/java/com/virtualandro/core/VMStarter.java

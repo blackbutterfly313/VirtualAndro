@@ -1,0 +1,19 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.virtualandro'
+version = '1.0.0'
+
+sourceCompatibility = 21
+targetCompatibility = 21
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.virtualandro.core.VirtualAndro'
+    }
+}
